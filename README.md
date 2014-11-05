@@ -55,7 +55,7 @@ curl -L $PUBLIC_IP:4001/v2/stats/leader
 
 ```bash
 docker build -t pkar/pruxy .
-docker run --name pruxy pkar/pruxy -port=6000 -dir=/prux -etcd=$LOCAL_IP:4001,$LOCAL_IP:4002,$LOCAL_IP:4003
+docker run --name pruxy pkar/pruxy -port=6000 -dir=pruxy -etcd=$LOCAL_IP:4001,$LOCAL_IP:4002,$LOCAL_IP:4003
 
 # or 
 docker push pkar/pruxy

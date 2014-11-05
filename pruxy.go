@@ -75,17 +75,35 @@ func (p *Pruxy) convert(host string) string {
 func (p *Pruxy) watch() {
 	watchChan := make(chan *etcd.Response)
 	stopChan := make(chan bool)
-	go p.client.Watch(p.watchDir, 0, true, watchChan, stopChan)
-	log.Infof("watching %s", p.watchDir)
-	for {
-		resp := <-watchChan
-		if resp == nil {
-			log.Info("no change", p.watchDir)
-			continue
+	go func() {
+		for {
+			_, err := p.client.Watch(p.watchDir, 0, true, watchChan, stopChan)
+			if err != nil {
+				log.Error(err)
+			}
+			watchChan = make(chan *etcd.Response)
+			stopChan = make(chan bool)
 		}
-		err := p.load()
-		if err != nil {
-			log.Error(err)
+	}()
+	log.Infof("watching %s", p.watchDir)
+	nErrs := 0
+	for {
+		select {
+		case resp := <-watchChan:
+			if resp != nil {
+				err := p.load()
+				if err != nil {
+					log.Error(err)
+				}
+			}
+			nErrs++
+			// nil here seems to mean etcd not found
+			if nErrs > 10 {
+				return
+			}
+		case <-stopChan:
+			log.Error("stop watching")
+			return
 		}
 	}
 }
