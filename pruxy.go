@@ -14,12 +14,10 @@ import (
 
 // Pruxy holds meta on configurations for routing to upstream servers.
 type Pruxy struct {
-	Hosts     map[string]*ring.Ring
-	client    *etcd.Client
-	mu        *sync.Mutex
-	watchChan chan *etcd.Response
-	stopChan  chan bool
-	watchDir  string
+	Hosts    map[string]*ring.Ring
+	client   *etcd.Client
+	mu       *sync.Mutex
+	watchDir string
 }
 
 // Set-up a connection to a etcd servers and initialize
@@ -31,11 +29,9 @@ func NewPruxy(etcdHosts []string, dir string) (*Pruxy, error) {
 	}
 
 	p := &Pruxy{
-		Hosts:     map[string]*ring.Ring{},
-		watchChan: make(chan *etcd.Response),
-		stopChan:  make(chan bool),
-		mu:        &sync.Mutex{},
-		watchDir:  dir,
+		Hosts:    map[string]*ring.Ring{},
+		mu:       &sync.Mutex{},
+		watchDir: dir,
 	}
 
 	p.client = etcd.NewClient(clientHosts)
@@ -77,12 +73,14 @@ func (p *Pruxy) convert(host string) string {
 // watch waits for the configured dir in etcd for changes
 // and reloads the configuration.
 func (p *Pruxy) watch() {
-	go p.client.Watch(p.watchDir, 0, true, p.watchChan, p.stopChan)
+	watchChan := make(chan *etcd.Response)
+	stopChan := make(chan bool)
+	go p.client.Watch(p.watchDir, 0, true, watchChan, stopChan)
 	log.Infof("watching %s", p.watchDir)
 	for {
-		r := <-p.watchChan
-		if r == nil {
-			log.Info("no change")
+		resp := <-watchChan
+		if resp == nil {
+			log.Info("no change", p.watchDir)
 			continue
 		}
 		err := p.load()
