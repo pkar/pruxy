@@ -5,14 +5,16 @@ import (
 	"net/http"
 	"strings"
 
-	log "github.com/golang/glog"
 	"github.com/pkar/pruxy"
+	log "github.com/pruxy/log"
 )
 
 var (
 	watchDir = flag.String("dir", "/pruxy", "where configs are (host->upstream)")
 	port     = flag.String("port", "6000", "listen on port")
-	etcdIPs  = flag.String("etcd", "172.17.42.1:4001", "comma separated etcd ip address default 172.17.42.1")
+	certFile = flag.String("certFile", "", "path to cert file")
+	keyFile  = flag.String("keyFile", "", "path to key file")
+	etcdIPs  = flag.String("etcd", "", "comma separated etcd ip address")
 )
 
 func main() {
@@ -29,6 +31,13 @@ func main() {
 
 	// Runs a reverse-proxy server on http://localhost:{port}/
 	proxy := pruxy.NewProxyWithHostConverter(hostConverter)
+	if *certFile != "" && *keyFile != "" {
+		err = http.ListenAndServeTLS(":"+*port, *certFile, *keyFile, proxy)
+		if err != nil {
+			log.Fatal(err)
+		}
+		return
+	}
 	err = http.ListenAndServe(":"+*port, proxy)
 	if err != nil {
 		log.Fatal(err)

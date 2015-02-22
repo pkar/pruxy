@@ -44,9 +44,9 @@ If you don't have etcd somewhere, try this from https://coreos.com/blog/Running-
 
 ```bash
 export PUBLIC_IP=192.168.59.103
-docker run -d -p 7001:7001 -p 4001:4001 coreos/etcd -peer-addr ${PUBLIC_IP}:7001 -addr ${PUBLIC_IP}:4001 -name etcd1
-docker run -d -p 7002:7002 -p 4002:4002 coreos/etcd -peer-addr ${PUBLIC_IP}:7002 -addr ${PUBLIC_IP}:4002 -name etcd2 -peers ${PUBLIC_IP}:7001,${PUBLIC_IP}:7002,${PUBLIC_IP}:7003
-docker run -d -p 7003:7003 -p 4003:4003 coreos/etcd -peer-addr ${PUBLIC_IP}:7003 -addr ${PUBLIC_IP}:4003 -name etcd3 -peers ${PUBLIC_IP}:7001,${PUBLIC_IP}:7002,${PUBLIC_IP}:7003
+docker run -d -p 7001:7001 -p 4001:4001 --name etcd1 coreos/etcd -peer-addr ${PUBLIC_IP}:7001 -addr ${PUBLIC_IP}:4001 -peers ${PUBLIC_IP}:7002,${PUBLIC_IP}:7003
+docker run -d -p 7002:7002 -p 4002:4002 --name etcd2 coreos/etcd -peer-addr ${PUBLIC_IP}:7002 -addr ${PUBLIC_IP}:4002 -peers ${PUBLIC_IP}:7001,${PUBLIC_IP}:7003
+docker run -d -p 7003:7003 -p 4003:4003 --name etcd3 coreos/etcd -peer-addr ${PUBLIC_IP}:7003 -addr ${PUBLIC_IP}:4003 -peers ${PUBLIC_IP}:7001,${PUBLIC_IP}:7002
 
 curl -L $PUBLIC_IP:4001/v2/stats/leader
 ```

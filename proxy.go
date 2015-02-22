@@ -8,7 +8,7 @@ import (
 	"net/http"
 	"strings"
 
-	log "github.com/golang/glog"
+	log "github.com/pruxy/log"
 )
 
 // These headers won't be copied from original request to proxy request.
@@ -58,7 +58,7 @@ func (p *Proxy) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	resp, err := p.Transport.RoundTrip(pr)
 	if err != nil {
 		log.Errorf("err: %v", err)
-		w.WriteHeader(http.StatusInternalServerError)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 

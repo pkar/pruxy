@@ -9,7 +9,7 @@ import (
 	"sync"
 
 	"github.com/coreos/go-etcd/etcd"
-	log "github.com/golang/glog"
+	log "github.com/pruxy/log"
 )
 
 // Pruxy holds meta on configurations for routing to upstream servers.
