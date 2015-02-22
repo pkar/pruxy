@@ -8,7 +8,7 @@ UNAME             := $(shell uname | awk '{print tolower($0)}')
 TAG               = v0.0.1
 
 vendor:
-	git remote add -f log git@github.com:pkar/log.git
+	-git remote add -f log git@github.com:pkar/log.git
 	git subtree add --squash --prefix=vendor/log log master
 	$(MAKE) vendor_sync
 
