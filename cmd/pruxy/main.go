@@ -6,7 +6,7 @@ import (
 	"strings"
 
 	"github.com/pkar/pruxy"
-	log "github.com/pruxy/log"
+	log "github.com/pruxy/vendor/log"
 )
 
 var (
