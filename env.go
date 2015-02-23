@@ -29,7 +29,9 @@ func NewEnv(prefix string) (*PruxyEnv, error) {
 		pair := strings.Split(e, "=")
 		if strings.HasPrefix(pair[0], prefix) {
 			host := pair[0][len(prefix):]
+
 			upstreams := strings.Split(pair[1], ",")
+			p.Hosts[host] = ring.New(len(upstreams))
 			for _, upstream := range upstreams {
 				p.Hosts[host].Value = upstream
 				p.Hosts[host] = p.Hosts[host].Next()
