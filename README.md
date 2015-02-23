@@ -1,6 +1,6 @@
 # pruxy
 
-A simple reverse proxy that is configured from etcd.
+A simple reverse proxy that is configured from etcd or environment variables.
 
 
 ### run
@@ -9,11 +9,29 @@ A simple reverse proxy that is configured from etcd.
 go get github.com/pkar/pruxy
 
 export LOCAL_IP=127.0.0.1
-go run $GOPATH/src/github.com/pkar/pruxy/cmd/main.go -port=6000 -dir=/pruxy -etcd=$LOCAL_IP:4001,$LOCAL_IP:4002
+go run $GOPATH/src/github.com/pkar/pruxy/cmd/main.go -port=6000 -prefix=pruxy -etcd=$LOCAL_IP:4001,$LOCAL_IP:4002
+
+# or using environment variables
+
+PRUXY_1="admin.dev.local=$127.0.0.1:8080,$127.0.0.1:8081" pruxy -prefix=PRUXY_
 ```
 
+## Environment
+
+Leave option -etcd option empty
+
+Format of environment variables should be
+
+```
+# PREFIX_VAR="{Host}=upstream1:port1,upstream2:port2"
+
+PRUXY_1="admin.dev.local=$127.0.0.1:8080,$127.0.0.1:8081" PRUXY_2="www.dev.local=$127.0.0.1:80" pruxy -prefix=PRUXY_
+```
+
+## Etcd
+
 ### setup etcd keys
-etcd keys are stored and watched on the given dir name
+etcd keys are stored and watched on the given prefix name
 
 ```
 curl $LOCAL_IP:4001/v2/keys/pruxy/{hostname}/{upstream}
@@ -55,5 +73,5 @@ curl -L $PUBLIC_IP:4001/v2/stats/leader
 
 ```bash
 docker build -t pkar/pruxy .
-docker run pkar/pruxy -port=6000 -dir=pruxy -etcd=$LOCAL_IP:4001,$LOCAL_IP:4002,$LOCAL_IP:4003
+docker run pkar/pruxy -port=6000 -prefix=pruxy -etcd=$LOCAL_IP:4001,$LOCAL_IP:4002,$LOCAL_IP:4003
 ```

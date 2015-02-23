@@ -18,6 +18,9 @@ type PruxyEnv struct {
 
 // Set-up environment variable based
 // upstream hosts.
+// Format should be
+// PREFIX_VAR="{Host}=upstream1:port1,upstream2:port2"
+// PRUXY_1="admin.dev.local=$127.0.0.1:8080,$127.0.0.1:8081" pruxy -prefix=PRUXY_
 func NewEnv(prefix string) (*PruxyEnv, error) {
 	p := &PruxyEnv{
 		Hosts:       map[string]*ring.Ring{},
@@ -25,12 +28,18 @@ func NewEnv(prefix string) (*PruxyEnv, error) {
 		watchPrefix: prefix,
 	}
 
-	for _, e := range os.Environ() {
-		pair := strings.Split(e, "=")
+	for _, env := range os.Environ() {
+		pair := strings.SplitN(env, "=", 2)
 		if strings.HasPrefix(pair[0], prefix) {
-			host := pair[0][len(prefix):]
+			tokens := strings.Split(pair[1], "=")
+			if len(tokens) != 2 {
+				log.Error("invalid host ip format ", env)
+				continue
+			}
 
-			upstreams := strings.Split(pair[1], ",")
+			host := tokens[0]
+			upstreams := strings.Split(tokens[1], ",")
+
 			p.Hosts[host] = ring.New(len(upstreams))
 			for _, upstream := range upstreams {
 				p.Hosts[host].Value = upstream
