@@ -8,7 +8,7 @@ import (
 	"net/http"
 	"strings"
 
-	log "github.com/pruxy/vendor/log"
+	log "github.com/pkar/pruxy/vendor/log"
 )
 
 // These headers won't be copied from original request to proxy request.
