@@ -13,7 +13,7 @@ go run $GOPATH/src/github.com/pkar/pruxy/cmd/main.go -port=6000 -prefix=pruxy -e
 
 # or using environment variables
 
-PRUXY_1="admin.dev.local=$127.0.0.1:8080,$127.0.0.1:8081" pruxy -prefix=PRUXY_
+PRUXY_1="admin.dev.local=127.0.0.1:8080,127.0.0.1:8081" pruxy -prefix=PRUXY_
 ```
 
 ## Environment
@@ -26,6 +26,11 @@ Format of environment variables should be
 # PREFIX_VAR="{Host}=upstream1:port1,upstream2:port2"
 
 PRUXY_1="admin.dev.local=$127.0.0.1:8080,$127.0.0.1:8081" PRUXY_2="www.dev.local=$127.0.0.1:80" pruxy -prefix=PRUXY_
+
+# Host can be with a full url path to match as a prefix
+# /v1 matches urls that have the /v1 prefix and end up as 127.0.0.1:8088/some/thing,127.0.0.1:8089/some/thing
+PRUXY_2="admin.dev.local/v1=127.0.0.1:8088,127.0.0.1:8089" pruxy -prefix=PRUXY_
+curl -H "Host: admin.dev.local" localhost:8080/v1/some/thing
 ```
 
 ## Etcd

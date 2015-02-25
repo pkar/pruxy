@@ -2,6 +2,7 @@ package pruxy
 
 import (
 	"container/ring"
+	"net/http"
 	"os"
 	"strings"
 	"sync"
@@ -9,21 +10,20 @@ import (
 	log "github.com/pkar/pruxy/vendor/log"
 )
 
-// Pruxy holds meta on configurations for routing to upstream servers.
+// PruxyEnv holds meta on configurations for routing to upstream servers.
 type PruxyEnv struct {
-	Hosts       map[string]*ring.Ring
+	Hosts       map[*HostPath]*ring.Ring
 	mu          *sync.Mutex
 	watchPrefix string
 }
 
-// Set-up environment variable based
-// upstream hosts.
+// NewEnv set-up environment variable based upstream hosts.
 // Format should be
-// PREFIX_VAR="{Host}=upstream1:port1,upstream2:port2"
-// PRUXY_1="admin.dev.local=$127.0.0.1:8080,$127.0.0.1:8081" pruxy -prefix=PRUXY_
+//   PREFIX_VAR="{Host}=upstream1:port1,upstream2:port2"
+//   PRUXY_1="admin.dev.local=$127.0.0.1:8080,$127.0.0.1:8081" pruxy -prefix=PRUXY_
 func NewEnv(prefix string) (*PruxyEnv, error) {
 	p := &PruxyEnv{
-		Hosts:       map[string]*ring.Ring{},
+		Hosts:       map[*HostPath]*ring.Ring{},
 		mu:          &sync.Mutex{},
 		watchPrefix: prefix,
 	}
@@ -36,15 +36,23 @@ func NewEnv(prefix string) (*PruxyEnv, error) {
 				log.Error("invalid host ip format ", env)
 				continue
 			}
+			u := strings.SplitN(tokens[0], "/", 2)
+			host := u[0]
+			var path string
+			if len(u) > 1 {
+				path = removeTrailingSlash("/" + u[1])
+			} else {
+				path = "/"
+			}
+			hostPath := &HostPath{host, path}
 
-			host := tokens[0]
 			upstreams := strings.Split(tokens[1], ",")
 
-			p.Hosts[host] = ring.New(len(upstreams))
+			p.Hosts[hostPath] = ring.New(len(upstreams))
 			for _, upstream := range upstreams {
-				p.Hosts[host].Value = upstream
-				p.Hosts[host] = p.Hosts[host].Next()
-				log.Infof("added upstream %s -> %s", host, upstream)
+				p.Hosts[hostPath].Value = upstream
+				p.Hosts[hostPath] = p.Hosts[hostPath].Next()
+				log.Infof("added upstream %s%s -> %s", hostPath.Host, hostPath.Path, upstream)
 			}
 		}
 	}
@@ -52,23 +60,27 @@ func NewEnv(prefix string) (*PruxyEnv, error) {
 	return p, nil
 }
 
-// DefaultConverter returns a function which provides the
-// host to upstream conversion.
-func (p *PruxyEnv) DefaultConverter() func(string) string {
-	return func(originalHost string) string {
-		return p.convert(originalHost)
+// DefaultRequestConverter takes a request and converts it to an upstream
+// one.
+func (p *PruxyEnv) DefaultRequestConverter() func(*http.Request, *http.Request) {
+	return func(originalRequest, proxy *http.Request) {
+		p.convert(originalRequest, proxy)
 	}
 }
 
-func (p *PruxyEnv) convert(host string) string {
+func (p *PruxyEnv) convert(originalRequest, proxy *http.Request) {
+	originalPath := removeTrailingSlash(originalRequest.URL.Path)
+	originalHostPath := &HostPath{originalRequest.Host, originalPath}
+
 	p.mu.Lock()
 	defer p.mu.Unlock()
-
-	if upstreams, ok := p.Hosts[host]; ok {
-		upstreamHost := upstreams.Value.(string)
-		upstreams = upstreams.Next()
-		p.Hosts[host] = upstreams
-		return upstreamHost
+	for hostPath, upstreams := range p.Hosts {
+		if hostPath.Host == originalHostPath.Host && strings.HasPrefix(originalHostPath.Path, hostPath.Path) {
+			upstreamHost := upstreams.Value.(string)
+			upstreams = upstreams.Next()
+			p.Hosts[hostPath] = upstreams
+			proxy.URL.Host = upstreamHost
+			proxy.URL.Path = strings.TrimPrefix(originalHostPath.Path, hostPath.Path)
+		}
 	}
-	return ""
 }

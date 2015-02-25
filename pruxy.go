@@ -2,9 +2,28 @@
 // changes in etcd to update it's configuration.
 package pruxy
 
-import ()
+import (
+	"net/http"
+	"strings"
+)
 
 // Pruxy holds meta on configurations for routing to upstream servers.
 type Pruxy interface {
-	DefaultConverter() func(string) string
+	DefaultRequestConverter() func(*http.Request, *http.Request)
+}
+
+// HostPath is used as a key in Pruxy.Hosts for routing.
+type HostPath struct {
+	Host string
+	Path string
+}
+
+// removeTrailingSlash removes a slash at the end of paths
+// only if the path is longer than 1. For instance / would
+// remain / but /a/ would become /a
+func removeTrailingSlash(path string) string {
+	if len(path) > 1 && strings.HasSuffix(path, "/") {
+		path = path[:len(path)-1]
+	}
+	return path
 }

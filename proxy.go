@@ -23,23 +23,23 @@ var ignoredHeaderNames = []string{
 	"Upgrade",
 }
 
-// Provide host-based proxy server.
+// Proxy provides a host-based proxy server.
 type Proxy struct {
 	RequestConverter func(originalRequest, pr *http.Request)
 	Transport        http.RoundTripper
 }
 
-// Create a host-based reverse-proxy.
+// NewProxyWithHostConverter creates a host-based reverse-proxy.
 func NewProxyWithHostConverter(hostConverter func(string) string) *Proxy {
 	return &Proxy{
-		RequestConverter: func(originalRequest, pr *http.Request) {
-			pr.URL.Host = hostConverter(originalRequest.Host)
+		RequestConverter: func(originalRequest, proxy *http.Request) {
+			proxy.URL.Host = hostConverter(originalRequest.Host)
 		},
 		Transport: http.DefaultTransport,
 	}
 }
 
-// Create a request-based reverse-proxy.
+// NewProxyWithRequestConverter creates a request-based reverse-proxy.
 func NewProxyWithRequestConverter(requestConverter func(*http.Request, *http.Request)) *Proxy {
 	return &Proxy{
 		RequestConverter: requestConverter,
@@ -49,7 +49,7 @@ func NewProxyWithRequestConverter(requestConverter func(*http.Request, *http.Req
 
 func (p *Proxy) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	// Create a new proxy request object by coping the original request.
-	pr := p.copyRequest(req)
+	pr := copyRequest(req)
 
 	// Convert an original request into another proxy request.
 	p.RequestConverter(req, pr)
@@ -57,7 +57,7 @@ func (p *Proxy) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	// Convert a request into a response by using its Transport.
 	resp, err := p.Transport.RoundTrip(pr)
 	if err != nil {
-		log.Errorf("err: %v", err)
+		log.Errorf("err: %v %s%s", err, pr.URL.Host, pr.URL.Path)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -76,8 +76,8 @@ func (p *Proxy) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	io.Copy(w, resp.Body)
 }
 
-// Create a new proxy request with some modifications from an original request.
-func (p *Proxy) copyRequest(originalRequest *http.Request) *http.Request {
+// copyRequest creates a new proxy request with some modifications from an original request.
+func copyRequest(originalRequest *http.Request) *http.Request {
 	pr := new(http.Request)
 	*pr = *originalRequest
 	pr.Proto = "HTTP/1.1"

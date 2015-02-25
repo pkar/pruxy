@@ -3,6 +3,7 @@ package pruxy
 import (
 	"container/ring"
 	"fmt"
+	"net/http"
 	"strings"
 	"sync"
 
@@ -44,22 +45,34 @@ func NewEtcd(etcdHosts []string, prefix string) (*PruxyEtcd, error) {
 	// load in configuration on start
 	err = p.load()
 	if err != nil {
-		log.Fatal(err, clientHosts)
+		log.Error(err, clientHosts)
+		return p, nil
 	}
 	// wait for changes
 	go p.watch()
 	return p, nil
 }
 
-// DefaultConverter returns a function which provides the
-// host to upstream conversion.
-func (p *PruxyEtcd) DefaultConverter() func(string) string {
-	return func(originalHost string) string {
-		return p.convert(originalHost)
+// DefaultRequestConverter
+func (p *PruxyEtcd) DefaultRequestConverter() func(*http.Request, *http.Request) {
+	return func(originalRequest, proxy *http.Request) {
+		p.convert(originalRequest, proxy)
 	}
 }
 
-func (p *PruxyEtcd) convert(host string) string {
+func (p *PruxyEtcd) convert(originalRequest, proxy *http.Request) {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+
+	if upstreams, ok := p.Hosts[originalRequest.Host]; ok {
+		upstreamHost := upstreams.Value.(string)
+		upstreams = upstreams.Next()
+		p.Hosts[originalRequest.Host] = upstreams
+		proxy.URL.Host = upstreamHost
+	}
+}
+
+func (p *PruxyEtcd) convertHost(host string) string {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 

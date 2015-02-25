@@ -19,37 +19,38 @@ var (
 
 func main() {
 	flag.Parse()
-	var p pruxy.Pruxy
-	var err error
 
-	if *etcdIPs != "" {
+	var err error
+	var p pruxy.Pruxy
+	// choose between an etcd setup or os environment variables
+	switch {
+	case *etcdIPs != "":
 		etcdHostList := strings.Split(*etcdIPs, ",")
 		p, err = pruxy.NewEtcd(etcdHostList, *watchPrefix)
 		if err != nil {
 			log.Fatal(err)
 		}
-	} else {
+	default:
 		p, err = pruxy.NewEnv(*watchPrefix)
 		if err != nil {
 			log.Fatal(err)
 		}
 	}
 
-	// Returns one of registered upstream hosts
-	hostConverter := p.DefaultConverter()
+	converter := p.DefaultRequestConverter()
+	proxy := pruxy.NewProxyWithRequestConverter(converter)
 
-	proxy := pruxy.NewProxyWithHostConverter(hostConverter)
-
-	// Runs a reverse-proxy server on http(s)://localhost:{port}/
-	if *certFile != "" && *keyFile != "" {
+	// run a reverse-proxy server on http(s)://localhost:{port}/
+	switch {
+	case *certFile != "" && *keyFile != "":
 		err = http.ListenAndServeTLS(":"+*port, *certFile, *keyFile, proxy)
 		if err != nil {
 			log.Fatal(err)
 		}
-		return
-	}
-	err = http.ListenAndServe(":"+*port, proxy)
-	if err != nil {
-		log.Fatal(err)
+	default:
+		err = http.ListenAndServe(":"+*port, proxy)
+		if err != nil {
+			log.Fatal(err)
+		}
 	}
 }
