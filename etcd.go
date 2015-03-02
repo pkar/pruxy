@@ -38,15 +38,15 @@ func NewEtcd(etcdHosts []string, prefix string) (*PruxyEtcd, error) {
 	}
 
 	p.client = etcd.NewClient(clientHosts)
-	// create initial prefix
+	// create initial prefix, ignore err if already defined
 	resp, err := p.client.CreateDir(p.watchPrefix, 0)
-	log.Infof("adding key: %s resp: %v err: %s", p.watchPrefix, resp, err)
+	log.Infof("adding key: %s resp: %v err: %v", p.watchPrefix, resp, err)
 
 	// load in configuration on start
 	err = p.load()
 	if err != nil {
-		log.Error(err, clientHosts)
-		return p, nil
+		log.Error(err)
+		return nil, err
 	}
 	// wait for changes
 	go p.watch()
@@ -140,7 +140,6 @@ func (p *PruxyEtcd) load() error {
 		host := strings.Split(hostNode.Key, "/")[2]
 		p.Hosts[host] = ring.New(len(hostNode.Nodes))
 		for _, upstreamNode := range hostNode.Nodes {
-			log.Infof("%+v", upstreamNode)
 			upstream := strings.Split(upstreamNode.Key, "/")[3]
 			if upstream != "" {
 				p.Hosts[host].Value = upstream

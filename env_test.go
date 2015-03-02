@@ -28,7 +28,7 @@ func TestNewEnv(t *testing.T) {
 	}
 }
 
-func TestDefaultRequestConverter(t *testing.T) {
+func TestEnvDefaultRequestConverter(t *testing.T) {
 	os.Setenv("TEST_1", "abc.com=127.0.0.1:8081,127.0.0.8082")
 	os.Setenv("TEST_2", "abc.com/abc/123=127.0.0.1")
 
@@ -39,7 +39,7 @@ func TestDefaultRequestConverter(t *testing.T) {
 	p.DefaultRequestConverter()
 }
 
-func TestConvert(t *testing.T) {
+func TestEnvConvert(t *testing.T) {
 	os.Setenv("TEST_1", "abc.com=127.0.0.1:8081,127.0.0.1:8082")
 	os.Setenv("TEST_2", "abc.com/abc/123=127.0.0.1")
 

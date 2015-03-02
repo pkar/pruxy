@@ -2,6 +2,7 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"net/http"
 	"strings"
 
@@ -11,14 +12,21 @@ import (
 
 var (
 	watchPrefix = flag.String("prefix", "pruxy", "where configs are (host->upstream)")
-	port        = flag.String("port", "6000", "listen on port")
+	port        = flag.String("port", "", "listen on port")
 	certFile    = flag.String("certFile", "", "path to cert file")
 	keyFile     = flag.String("keyFile", "", "path to key file")
 	etcdIPs     = flag.String("etcd", "", "comma separated etcd ip address")
 )
 
+func redirectHttps(w http.ResponseWriter, req *http.Request) {
+	http.Redirect(w, req, fmt.Sprintf("https://%s/%s", req.Host, req.URL.RequestURI()), http.StatusMovedPermanently)
+}
+
 func main() {
 	flag.Parse()
+	if *port == "" {
+		log.Fatal("-port option required")
+	}
 
 	var err error
 	var p pruxy.Pruxy
@@ -47,6 +55,12 @@ func main() {
 		if err != nil {
 			log.Fatal(err)
 		}
+		go func() {
+			err := http.ListenAndServe(":80", http.HandlerFunc(redirectHttps))
+			if err != nil {
+				log.Fatal(err)
+			}
+		}()
 	default:
 		err = http.ListenAndServe(":"+*port, proxy)
 		if err != nil {
