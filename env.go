@@ -69,8 +69,7 @@ func (p *PruxyEnv) DefaultRequestConverter() func(*http.Request, *http.Request) 
 }
 
 func (p *PruxyEnv) convert(originalRequest, proxy *http.Request) {
-	originalPath := removeTrailingSlash(originalRequest.URL.Path)
-	originalHostPath := &HostPath{originalRequest.Host, originalPath}
+	originalHostPath := &HostPath{originalRequest.Host, originalRequest.URL.Path}
 
 	p.mu.Lock()
 	defer p.mu.Unlock()
