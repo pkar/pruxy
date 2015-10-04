@@ -3,12 +3,12 @@ package pruxy
 import (
 	"container/ring"
 	"fmt"
+	"log"
 	"net/http"
 	"strings"
 	"sync"
 
 	"github.com/coreos/go-etcd/etcd"
-	log "github.com/pkar/pruxy/vendor/log"
 )
 
 // Pruxy holds meta on configurations for routing to upstream servers.
@@ -40,12 +40,12 @@ func NewEtcd(etcdHosts []string, prefix string) (*PruxyEtcd, error) {
 	p.client = etcd.NewClient(clientHosts)
 	// create initial prefix, ignore err if already defined
 	resp, err := p.client.CreateDir(p.watchPrefix, 0)
-	log.Infof("adding key: %s resp: %v err: %v", p.watchPrefix, resp, err)
+	log.Printf("adding key: %s resp: %v err: %v", p.watchPrefix, resp, err)
 
 	// load in configuration on start
 	err = p.load()
 	if err != nil {
-		log.Error(err)
+		log.Println("err:", err)
 		return nil, err
 	}
 	// wait for changes
@@ -94,13 +94,13 @@ func (p *PruxyEtcd) watch() {
 		for {
 			_, err := p.client.Watch(p.watchPrefix, 0, true, watchChan, stopChan)
 			if err != nil {
-				log.Error(err)
+				log.Println(err)
 			}
 			watchChan = make(chan *etcd.Response)
 			stopChan = make(chan bool)
 		}
 	}()
-	log.Infof("watching %s", p.watchPrefix)
+	log.Printf("watching %s", p.watchPrefix)
 	nErrs := 0
 	for {
 		select {
@@ -108,7 +108,7 @@ func (p *PruxyEtcd) watch() {
 			if resp != nil {
 				err := p.load()
 				if err != nil {
-					log.Error(err)
+					log.Println("err:", err)
 				}
 			}
 			nErrs++
@@ -117,7 +117,7 @@ func (p *PruxyEtcd) watch() {
 				return
 			}
 		case <-stopChan:
-			log.Error("stop watching")
+			log.Println("stop watching")
 			return
 		}
 	}
@@ -127,7 +127,7 @@ func (p *PruxyEtcd) watch() {
 func (p *PruxyEtcd) load() error {
 	response, err := p.client.Get(p.watchPrefix, false, true)
 	if err != nil {
-		log.Error(err)
+		log.Println("err:", err)
 		return err
 	}
 
@@ -144,7 +144,7 @@ func (p *PruxyEtcd) load() error {
 			if upstream != "" {
 				p.Hosts[host].Value = upstream
 				p.Hosts[host] = p.Hosts[host].Next()
-				log.Infof("added upstream %s -> %s", host, upstream)
+				log.Printf("added upstream %s -> %s", host, upstream)
 			}
 		}
 	}

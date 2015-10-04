@@ -4,11 +4,10 @@ package pruxy
 
 import (
 	"io"
+	"log"
 	"net"
 	"net/http"
 	"strings"
-
-	log "github.com/pkar/pruxy/vendor/log"
 )
 
 // These headers won't be copied from original request to proxy request.
@@ -57,7 +56,7 @@ func (p *Proxy) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	// Convert a request into a response by using its Transport.
 	resp, err := p.Transport.RoundTrip(pr)
 	if err != nil {
-		log.Errorf("err: %v %s%s", err, pr.URL.Host, pr.URL.Path)
+		log.Printf("err: %v %s%s", err, pr.URL.Host, pr.URL.Path)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}

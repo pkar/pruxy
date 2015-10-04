@@ -3,11 +3,10 @@ package pruxy
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 	"net/http/httptest"
 	"testing"
-
-	log "github.com/pkar/pruxy/vendor/log"
 )
 
 var (

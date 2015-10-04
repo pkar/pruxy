@@ -3,11 +3,11 @@ package main
 import (
 	"flag"
 	"fmt"
+	"log"
 	"net/http"
 	"strings"
 
 	"github.com/pkar/pruxy"
-	log "github.com/pkar/pruxy/vendor/log"
 )
 
 var (

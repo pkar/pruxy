@@ -2,12 +2,11 @@ package pruxy
 
 import (
 	"container/ring"
+	"log"
 	"net/http"
 	"os"
 	"strings"
 	"sync"
-
-	log "github.com/pkar/pruxy/vendor/log"
 )
 
 // PruxyEnv holds meta on configurations for routing to upstream servers.
@@ -33,7 +32,7 @@ func NewEnv(prefix string) (*PruxyEnv, error) {
 		if strings.HasPrefix(pair[0], prefix) {
 			tokens := strings.Split(pair[1], "=")
 			if len(tokens) != 2 {
-				log.Error("invalid host ip format ", env)
+				log.Printf("err: invalid host ip format should be of the form '%sA=host.com=127.0.0.1:80'", prefix)
 				continue
 			}
 			u := strings.SplitN(tokens[0], "/", 2)
@@ -52,7 +51,7 @@ func NewEnv(prefix string) (*PruxyEnv, error) {
 			for _, upstream := range upstreams {
 				p.Hosts[hostPath].Value = upstream
 				p.Hosts[hostPath] = p.Hosts[hostPath].Next()
-				log.Infof("added upstream %s%s -> %s", hostPath.Host, hostPath.Path, upstream)
+				log.Printf("added upstream %s%s -> %s\n", hostPath.Host, hostPath.Path, upstream)
 			}
 		}
 	}

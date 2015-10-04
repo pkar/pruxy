@@ -6,14 +6,16 @@ A simple reverse proxy that is configured from etcd or environment variables.
 ### run
 
 ```bash
-go get github.com/pkar/pruxy
+$ go get github.com/pkar/pruxy
+$ go install github.com/pkar/pruxy/cmd/pruxy/
 
-export LOCAL_IP=127.0.0.1
-go run $GOPATH/src/github.com/pkar/pruxy/cmd/main.go -port=6000 -prefix=pruxy -etcd=$LOCAL_IP:4001,$LOCAL_IP:4002
+# using environment variables
 
-# or using environment variables
+PRUXY_1="admin.dev.local=127.0.0.1:8080,127.0.0.1:8081" pruxy -port=6000 -prefix=PRUXY_
 
-PRUXY_1="admin.dev.local=127.0.0.1:8080,127.0.0.1:8081" pruxy -prefix=PRUXY_
+# using etcd
+
+LOCAL_IP=127.0.0.1 pruxy -port=6000 -prefix=pruxy -etcd=$LOCAL_IP:4001,$LOCAL_IP:4002
 ```
 
 ## Environment

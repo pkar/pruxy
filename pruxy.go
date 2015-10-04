@@ -3,6 +3,7 @@
 package pruxy
 
 import (
+	"log"
 	"net/http"
 	"strings"
 )
@@ -16,6 +17,10 @@ type Pruxy interface {
 type HostPath struct {
 	Host string
 	Path string
+}
+
+func init() {
+	log.SetFlags(log.Lshortfile | log.Ldate | log.Ltime)
 }
 
 // removeTrailingSlash removes a slash at the end of paths

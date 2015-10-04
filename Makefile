@@ -1,32 +1,25 @@
 REPO              = github.com/pkar/pruxy
-COMPONENT         = pruxy
-CMD               = $(REPO)/cmd/$(COMPONENT)
-IMAGE_NAME        = $(COMPONENT)
+APP               = pruxy
+CMD               = $(REPO)/cmd/$(APP)
+IMAGE_NAME        = pkar/$(APP)
 IMAGE_TAG         = latest
 IMAGE_SPEC        = $(IMAGE_NAME):$(IMAGE_TAG)
 UNAME             := $(shell uname | awk '{print tolower($0)}')
 TAG               = v0.0.1
 
 vendor:
-	-git remote add -f log git@github.com:pkar/log.git
-	git subtree add --squash --prefix=vendor/log log master
-	$(MAKE) vendor_sync
-
-vendor_sync:
-	git fetch log
-	git subtree pull --message "merge log" --squash --prefix=vendor/log log master
+	go get -u github.com/coreos/go-etcd/etcd
 
 build_docker:
-	docker build --pull -t $(IMAGE_SPEC) .
-	docker run -v $(CURDIR)/bin/linux_amd64:/go/bin $(IMAGE_SPEC) go install $(CMD)
+	docker build -t $(IMAGE_SPEC) .
 
 build_linux:
 	mkdir -p bin/linux_amd64
-	GOARCH=amd64 GOOS=linux go build -o bin/linux_amd64/$(COMPONENT) ./cmd/$(COMPONENT)/main.go
+	GOARCH=amd64 GOOS=linux go build -o bin/linux_amd64/$(APP) ./cmd/$(APP)/main.go
 
 build_darwin:
 	mkdir -p bin/darwin_amd64
-	go build -o bin/darwin_amd64/$(COMPONENT) ./cmd/$(COMPONENT)/main.go
+	go build -o bin/darwin_amd64/$(APP) ./cmd/$(APP)/main.go
 
 build:
 	$(MAKE) build_$(UNAME)
@@ -40,7 +33,7 @@ install:
 	go install $(CMD)
 
 run:
-	go run cmd/$(COMPONENT)/main.go
+	go run cmd/$(APP)/main.go
 
 test:
 	go test -cover .

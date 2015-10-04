@@ -7,14 +7,14 @@ import (
 )
 
 func TestNewEnv(t *testing.T) {
-	os.Setenv("TEST_1", "abc.com=127.0.0.1:8081,127.0.0.8082")
-	os.Setenv("TEST_2", "abc.com/abc/123=127.0.0.1,127.0.0.1:8080")
-	os.Setenv("TEST_3", "abc.com/abc/123")
-	defer os.Unsetenv("TEST_1")
-	defer os.Unsetenv("TEST_2")
-	defer os.Unsetenv("TEST_3")
+	os.Setenv("TEST_PRUXY_1", "abc.com=127.0.0.1:8081,127.0.0.8082")
+	os.Setenv("TEST_PRUXY_2", "abc.com/abc/123=127.0.0.1,127.0.0.1:8080")
+	os.Setenv("TEST_PRUXY_3", "abc.com/abc/123")
+	defer os.Unsetenv("TEST_PRUXY_1")
+	defer os.Unsetenv("TEST_PRUXY_2")
+	defer os.Unsetenv("TEST_PRUXY_3")
 
-	p, err := NewEnv("TEST_")
+	p, err := NewEnv("TEST_PRUXY_")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -29,10 +29,12 @@ func TestNewEnv(t *testing.T) {
 }
 
 func TestEnvDefaultRequestConverter(t *testing.T) {
-	os.Setenv("TEST_1", "abc.com=127.0.0.1:8081,127.0.0.8082")
-	os.Setenv("TEST_2", "abc.com/abc/123=127.0.0.1")
+	os.Setenv("TEST_PRUXY_1", "abc.com=127.0.0.1:8081,127.0.0.8082")
+	os.Setenv("TEST_PRUXY_2", "abc.com/abc/123=127.0.0.1")
+	defer os.Unsetenv("TEST_PRUXY_1")
+	defer os.Unsetenv("TEST_PRUXY_2")
 
-	p, err := NewEnv("TEST_")
+	p, err := NewEnv("TEST_PRUXY_")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -40,15 +42,29 @@ func TestEnvDefaultRequestConverter(t *testing.T) {
 }
 
 func TestEnvConvert(t *testing.T) {
-	os.Setenv("TEST_1", "abc.com=127.0.0.1:8081,127.0.0.1:8082")
-	os.Setenv("TEST_2", "abc.com/abc/123=127.0.0.1")
+	os.Setenv("TEST_PRUXY_1", "abc.com=127.0.0.1:8081,127.0.0.1:8082")
+	os.Setenv("TEST_PRUXY_2", "abc.com/abc/123=127.0.0.1")
+	defer os.Unsetenv("TEST_PRUXY_1")
+	defer os.Unsetenv("TEST_PRUXY_2")
 
-	p, _ := NewEnv("TEST_")
+	p, _ := NewEnv("TEST_PRUXY_")
 	convertFunc := p.DefaultRequestConverter()
-	in, _ := http.NewRequest("GET", "http://abc.com/", nil)
-	out := copyRequest(in)
-	convertFunc(in, out)
-	if out.URL.String() != "http://127.0.0.1:8081" {
-		t.Fatalf("expected http://127.0.0.1:8081, got %s", out.URL.String())
+
+	var convertTests = []struct {
+		in  string
+		out string
+	}{
+		{"http://abc.com/a/b/", "http://127.0.0.1:8081/a/b"},
+		{"http://abc.com/a/b/", "http://127.0.0.1:8082/a/b"},
+		{"http://abc.com/abc/123", "http://127.0.0.1"},
+	}
+
+	for i, tt := range convertTests {
+		in, _ := http.NewRequest("GET", tt.in, nil)
+		out := copyRequest(in)
+		convertFunc(in, out)
+		if out.URL.String() != tt.out {
+			t.Errorf("%d expected %s, got %s", i, tt.out, out.URL.String())
+		}
 	}
 }
