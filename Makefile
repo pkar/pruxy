@@ -10,8 +10,9 @@ TAG               = v0.0.1
 vendor:
 	go get -u github.com/coreos/go-etcd/etcd
 
-build_docker:
-	docker build -t $(IMAGE_SPEC) .
+push_docker: build_linux
+	docker build -t $(IMAGE_NAME) .
+	docker push $(IMAGE_NAME)
 
 build_linux:
 	mkdir -p bin/linux_amd64
@@ -23,11 +24,6 @@ build_darwin:
 
 build:
 	$(MAKE) build_$(UNAME)
-
-release:
-	$(MAKE) build
-	cd bin/$(UNAME)_amd64 && tar -czvf runit-$(TAG).$(UNAME).tar.gz runit
-	mv bin/$(UNAME)_amd64/runit-$(TAG).$(UNAME).tar.gz bin/
 
 install:
 	go install $(CMD)

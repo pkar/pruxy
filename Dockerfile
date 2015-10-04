@@ -1,9 +1,5 @@
-FROM golang
+FROM alpine
 
-WORKDIR /go
-ADD . src/github.com/pkar/pruxy
-RUN go get ./...
+ADD bin/linux_amd64/pruxy /usr/bin/
 
-RUN mv /go/src/github.com/pkar/pruxy/certs /go/
-RUN rm -rf /go/src/*
-CMD ["/go/bin/pruxy"]
+CMD pruxy -port=6000 -prefix=PRUXY_
