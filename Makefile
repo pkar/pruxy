@@ -10,9 +10,13 @@ TAG               = v0.0.1
 vendor:
 	go get -u github.com/coreos/go-etcd/etcd
 
-push_docker: build_linux
-	docker build -t $(IMAGE_NAME) .
+push_docker:
+	$(MAKE) build_linux
+	$(MAKE) build_docker
 	docker push $(IMAGE_NAME)
+
+build_docker:
+	docker build -t $(IMAGE_NAME) .
 
 build_linux:
 	mkdir -p bin/linux_amd64

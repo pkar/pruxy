@@ -56,7 +56,7 @@ func TestEnvConvert(t *testing.T) {
 	}{
 		{"http://abc.com/a/b/", "http://127.0.0.1:8081/a/b/"},
 		{"http://abc.com/a/b", "http://127.0.0.1:8082/a/b"},
-		{"http://abc.com/abc/123", "http://127.0.0.1"},
+		{"http://abc.com/abc/123/456/hi", "http://127.0.0.1/456/hi"},
 	}
 
 	for i, tt := range convertTests {

@@ -79,6 +79,9 @@ func (p *PruxyEnv) convert(originalRequest, proxy *http.Request) {
 			p.Hosts[hostPath] = upstreams
 			proxy.URL.Host = upstreamHost
 			proxy.URL.Path = strings.TrimPrefix(originalHostPath.Path, hostPath.Path)
+			if !strings.HasPrefix(proxy.URL.Path, "/") {
+				proxy.URL.Path = "/" + proxy.URL.Path
+			}
 		}
 	}
 }
