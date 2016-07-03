@@ -51,16 +51,16 @@ func main() {
 	// run a reverse-proxy server on http(s)://localhost:{port}/
 	switch {
 	case *certFile != "" && *keyFile != "":
-		err = http.ListenAndServeTLS(":"+*port, *certFile, *keyFile, proxy)
-		if err != nil {
-			log.Fatal(err)
-		}
 		go func() {
 			err := http.ListenAndServe(":80", http.HandlerFunc(redirectHttps))
 			if err != nil {
 				log.Fatal(err)
 			}
 		}()
+		err = http.ListenAndServeTLS(":"+*port, *certFile, *keyFile, proxy)
+		if err != nil {
+			log.Fatal(err)
+		}
 	default:
 		err = http.ListenAndServe(":"+*port, proxy)
 		if err != nil {
